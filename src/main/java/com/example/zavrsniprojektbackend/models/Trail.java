@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+// Promijeni Trail.java
 @Entity
 @Table(name = "trails")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -29,7 +30,13 @@ public class Trail {
     private String difficulty;
 
     @Column(name = "created_at", updatable = false)
-    private Instant createdAt = Instant.now();
+    private Instant createdAt;
+
+    // Dodaj ovu metodu
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+    }
 
     @OneToMany(mappedBy = "trail",
             cascade = CascadeType.ALL,
