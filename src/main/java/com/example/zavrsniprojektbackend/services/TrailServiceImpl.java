@@ -10,6 +10,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service @RequiredArgsConstructor
 public class TrailServiceImpl implements TrailService {
 
@@ -50,6 +52,37 @@ public class TrailServiceImpl implements TrailService {
                 saved.getHeightKm(),
                 saved.getDifficulty(),
                 saved.getCreatedAt(),
+                wpDtos
+        );
+    }
+    // TrailServiceImpl.java - implementiraj metode
+    @Override
+    public List<TrailResponseDto> getAllTrails() {
+        return trailRepo.findAll().stream()
+                .map(this::mapToTrailResponseDto)
+                .toList();
+    }
+
+    @Override
+    public TrailResponseDto getTrailById(Integer id) {
+        Trail trail = trailRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Trail not found"));
+        return mapToTrailResponseDto(trail);
+    }
+
+    private TrailResponseDto mapToTrailResponseDto(Trail trail) {
+        var wpDtos = trail.getWaypoints().stream()
+                .sorted((a, b) -> Integer.compare(a.getOrder(), b.getOrder())) // Sort by order
+                .map(w -> new WaypointDto(w.getLatitude(), w.getLongitude(), w.getOrder()))
+                .toList();
+
+        return new TrailResponseDto(
+                trail.getId(),
+                trail.getName(),
+                trail.getLengthKm(),
+                trail.getHeightKm(),
+                trail.getDifficulty(),
+                trail.getCreatedAt(),
                 wpDtos
         );
     }
