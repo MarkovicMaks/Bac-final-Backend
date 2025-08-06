@@ -1,4 +1,4 @@
-package com.example.zavrsniprojektbackend.controlers;
+package com.example.zavrsniprojektbackend.controllers;
 
 import com.example.zavrsniprojektbackend.dtos.CreateTrailRequest;
 import com.example.zavrsniprojektbackend.dtos.TrailResponseDto;
