@@ -7,11 +7,14 @@ import java.util.List;
 public record TrailResponseDto(
         Integer id,
         String name,
+        String description,
         BigDecimal lengthKm,
         BigDecimal heightKm,
         String difficulty,
         Instant createdAt,
-        List<WaypointDto> waypoints) {}
-
-
-
+        BigDecimal minElevation,
+        BigDecimal maxElevation,
+        BigDecimal totalAscent,
+        BigDecimal totalDescent,
+        List<WaypointDto> waypoints
+) {}
