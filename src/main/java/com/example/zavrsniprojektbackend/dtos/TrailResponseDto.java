@@ -17,9 +17,10 @@ public record TrailResponseDto(
         BigDecimal totalAscent,
         BigDecimal totalDescent,
         List<WaypointDto> waypoints,
-        BiomePercentagesDto biomes  // Može biti null dok se ne implementira
+        BiomePercentagesDto biomes,
+        RatingStatsDto ratingStats
 ) {
-    // Konstruktor za kompatibilnost s postojećim kodom (bez biomes)
+    // Keep existing constructors for compatibility
     public TrailResponseDto(
             Integer id,
             String name,
@@ -32,8 +33,9 @@ public record TrailResponseDto(
             BigDecimal maxElevation,
             BigDecimal totalAscent,
             BigDecimal totalDescent,
-            List<WaypointDto> waypoints) {
+            List<WaypointDto> waypoints,
+            BiomePercentagesDto biomes) {
         this(id, name, description, lengthKm, heightKm, difficulty, createdAt,
-                minElevation, maxElevation, totalAscent, totalDescent, waypoints, null);
+                minElevation, maxElevation, totalAscent, totalDescent, waypoints, biomes, null);
     }
 }

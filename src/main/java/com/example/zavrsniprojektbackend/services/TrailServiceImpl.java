@@ -4,11 +4,14 @@ import com.example.zavrsniprojektbackend.dtos.CreateTrailRequest;
 import com.example.zavrsniprojektbackend.dtos.TrailResponseDto;
 import com.example.zavrsniprojektbackend.dtos.WaypointDto;
 import com.example.zavrsniprojektbackend.dtos.BiomePercentagesDto;
+import com.example.zavrsniprojektbackend.dtos.RatingStatsDto;
 import com.example.zavrsniprojektbackend.models.Trail;
 import com.example.zavrsniprojektbackend.models.TrailWaypoint;
 import com.example.zavrsniprojektbackend.models.TrailBiome;
+import com.example.zavrsniprojektbackend.models.TrailRating;
 import com.example.zavrsniprojektbackend.repos.TrailRepository;
 import com.example.zavrsniprojektbackend.repos.TrailBiomeRepository;
+import com.example.zavrsniprojektbackend.repos.TrailRatingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,7 @@ public class TrailServiceImpl implements TrailService {
 
     private final TrailRepository trailRepo;
     private final TrailBiomeRepository trailBiomeRepo;
+    private final TrailRatingRepository trailRatingRepo;
     private final LulcAnalysisService lulcAnalysisService;
 
     @Override
@@ -91,6 +95,10 @@ public class TrailServiceImpl implements TrailService {
     }
 
     private TrailResponseDto mapToTrailResponseDto(Trail trail) {
+        return mapToTrailResponseDto(trail, null);
+    }
+
+    private TrailResponseDto mapToTrailResponseDto(Trail trail, Integer currentUserId) {
         // Map waypoints
         var wpDtos = trail.getWaypoints().stream()
                 .sorted(Comparator.comparingInt(TrailWaypoint::getOrder))
@@ -107,6 +115,9 @@ public class TrailServiceImpl implements TrailService {
                 .map(this::mapToBiomeDto)
                 .orElse(null);
 
+        // Get rating stats
+        RatingStatsDto ratingStats = getRatingStats(trail.getId(), currentUserId);
+
         return new TrailResponseDto(
                 trail.getId(),
                 trail.getName(),
@@ -120,8 +131,23 @@ public class TrailServiceImpl implements TrailService {
                 trail.getTotalAscent(),
                 trail.getTotalDescent(),
                 wpDtos,
-                biomes
+                biomes,
+                ratingStats
         );
+    }
+
+    private RatingStatsDto getRatingStats(Integer trailId, Integer userId) {
+        Double avgRating = trailRatingRepo.getAverageRatingForTrail(trailId);
+        Long totalRatings = trailRatingRepo.getCountForTrail(trailId);
+
+        Integer userRating = null;
+        if (userId != null) {
+            userRating = trailRatingRepo.findByTrailIdAndUserId(trailId, userId)
+                    .map(TrailRating::getRating)
+                    .orElse(null);
+        }
+
+        return new RatingStatsDto(avgRating, totalRatings, userRating);
     }
 
     private BiomePercentagesDto mapToBiomeDto(TrailBiome biome) {
