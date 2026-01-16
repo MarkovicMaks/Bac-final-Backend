@@ -3,26 +3,35 @@ package com.example.zavrsniprojektbackend.services;
 import com.example.zavrsniprojektbackend.dtos.CreateTrailRequest;
 import com.example.zavrsniprojektbackend.dtos.TrailResponseDto;
 import com.example.zavrsniprojektbackend.dtos.WaypointDto;
+import com.example.zavrsniprojektbackend.dtos.BiomePercentagesDto;
 import com.example.zavrsniprojektbackend.models.Trail;
 import com.example.zavrsniprojektbackend.models.TrailWaypoint;
+import com.example.zavrsniprojektbackend.models.TrailBiome;
 import com.example.zavrsniprojektbackend.repos.TrailRepository;
+import com.example.zavrsniprojektbackend.repos.TrailBiomeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TrailServiceImpl implements TrailService {
 
     private final TrailRepository trailRepo;
+    private final TrailBiomeRepository trailBiomeRepo;
+    private final LulcAnalysisService lulcAnalysisService;
 
     @Override
     @Transactional
     public TrailResponseDto createTrail(CreateTrailRequest req) {
+        log.info("Creating trail: {}", req.name());
 
         Trail trail = Trail.builder()
                 .name(req.name())
@@ -32,23 +41,39 @@ public class TrailServiceImpl implements TrailService {
                 .difficulty(req.difficulty())
                 .build();
 
+        // Add waypoints
         req.waypoints().forEach(wpDto -> {
             TrailWaypoint wp = TrailWaypoint.builder()
                     .latitude(BigDecimal.valueOf(wpDto.latitude()))
                     .longitude(BigDecimal.valueOf(wpDto.longitude()))
                     .order(wpDto.order())
-                    .elevation(wpDto.elevation()) // Dodaj elevation ako postoji
+                    .elevation(wpDto.elevation())
                     .build();
             trail.addWaypoint(wp);
         });
 
-        // NOVO: Izračunaj elevation statistike prije spremanja
+        // Calculate elevation statistics
         trail.calculateElevationStats();
 
+        // Save trail
         Trail saved = trailRepo.save(trail);
+        log.info("Trail saved with ID: {}", saved.getId());
 
-        // Map Entity → Response DTO
+        // Start async LULC analysis
+        analyzeLulcAsync(saved);
+
         return mapToTrailResponseDto(saved);
+    }
+
+    @Async
+    protected void analyzeLulcAsync(Trail trail) {
+        try {
+            log.info("Starting async LULC analysis for trail: {}", trail.getId());
+            lulcAnalysisService.analyzeTrailLulc(trail);
+            log.info("Completed LULC analysis for trail: {}", trail.getId());
+        } catch (Exception e) {
+            log.error("Error analyzing LULC for trail {}: {}", trail.getId(), e.getMessage(), e);
+        }
     }
 
     @Override
@@ -61,20 +86,26 @@ public class TrailServiceImpl implements TrailService {
     @Override
     public TrailResponseDto getTrailById(Integer id) {
         Trail trail = trailRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Trail not found"));
+                .orElseThrow(() -> new RuntimeException("Trail not found with ID: " + id));
         return mapToTrailResponseDto(trail);
     }
 
     private TrailResponseDto mapToTrailResponseDto(Trail trail) {
+        // Map waypoints
         var wpDtos = trail.getWaypoints().stream()
-                .sorted(Comparator.comparingInt(TrailWaypoint::getOrder)) // Sort by order
+                .sorted(Comparator.comparingInt(TrailWaypoint::getOrder))
                 .map(w -> new WaypointDto(
                         w.getLatitude().doubleValue(),
                         w.getLongitude().doubleValue(),
                         w.getOrder(),
-                        w.getElevation() // Uključi elevation u response
+                        w.getElevation()
                 ))
                 .toList();
+
+        // Get biome data if available
+        BiomePercentagesDto biomes = trailBiomeRepo.findByTrailId(trail.getId())
+                .map(this::mapToBiomeDto)
+                .orElse(null);
 
         return new TrailResponseDto(
                 trail.getId(),
@@ -88,7 +119,21 @@ public class TrailServiceImpl implements TrailService {
                 trail.getMaxElevation(),
                 trail.getTotalAscent(),
                 trail.getTotalDescent(),
-                wpDtos
+                wpDtos,
+                biomes
+        );
+    }
+
+    private BiomePercentagesDto mapToBiomeDto(TrailBiome biome) {
+        return new BiomePercentagesDto(
+                biome.getZimzelenaPercentage(),
+                biome.getListopadnaPercentage(),
+                biome.getLivadePercentage(),
+                biome.getUrbanoPercentage(),
+                biome.getPoljaPercentage(),
+                biome.getVodePercentage(),
+                biome.getDominantBiome(),
+                biome.getAnalyzedAt()
         );
     }
 }
