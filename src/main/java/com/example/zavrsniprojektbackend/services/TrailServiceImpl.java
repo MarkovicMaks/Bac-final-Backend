@@ -5,10 +5,7 @@ import com.example.zavrsniprojektbackend.dtos.TrailResponseDto;
 import com.example.zavrsniprojektbackend.dtos.WaypointDto;
 import com.example.zavrsniprojektbackend.dtos.BiomePercentagesDto;
 import com.example.zavrsniprojektbackend.dtos.RatingStatsDto;
-import com.example.zavrsniprojektbackend.models.Trail;
-import com.example.zavrsniprojektbackend.models.TrailWaypoint;
-import com.example.zavrsniprojektbackend.models.TrailBiome;
-import com.example.zavrsniprojektbackend.models.TrailRating;
+import com.example.zavrsniprojektbackend.models.*;
 import com.example.zavrsniprojektbackend.repos.TrailRepository;
 import com.example.zavrsniprojektbackend.repos.TrailBiomeRepository;
 import com.example.zavrsniprojektbackend.repos.TrailRatingRepository;
@@ -34,8 +31,8 @@ public class TrailServiceImpl implements TrailService {
 
     @Override
     @Transactional
-    public TrailResponseDto createTrail(CreateTrailRequest req) {
-        log.info("Creating trail: {}", req.name());
+    public TrailResponseDto createTrail(CreateTrailRequest req, User user) {  // ADD User parameter here
+        log.info("Creating trail: {} for user: {}", req.name(), user.getId());
 
         Trail trail = Trail.builder()
                 .name(req.name())
@@ -43,6 +40,7 @@ public class TrailServiceImpl implements TrailService {
                 .lengthKm(req.lengthKm())
                 .heightKm(req.heightKm())
                 .difficulty(req.difficulty())
+                .createdBy(user)  // ADD this line
                 .build();
 
         // Add waypoints
@@ -92,6 +90,13 @@ public class TrailServiceImpl implements TrailService {
         Trail trail = trailRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Trail not found with ID: " + id));
         return mapToTrailResponseDto(trail);
+    }
+
+    @Override
+    public List<TrailResponseDto> getTrailsByUser(Integer userId) {
+        return trailRepo.findByCreatedById(userId).stream()
+                .map(this::mapToTrailResponseDto)
+                .toList();
     }
 
     private TrailResponseDto mapToTrailResponseDto(Trail trail) {

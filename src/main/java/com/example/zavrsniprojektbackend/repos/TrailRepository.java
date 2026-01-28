@@ -1,7 +1,10 @@
 package com.example.zavrsniprojektbackend.repos;
 
-
 import com.example.zavrsniprojektbackend.models.Trail;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TrailRepository extends JpaRepository<Trail, Integer> {}
+import java.util.List;
+
+public interface TrailRepository extends JpaRepository<Trail, Integer> {
+    List<Trail> findByCreatedById(Integer userId);
+}
