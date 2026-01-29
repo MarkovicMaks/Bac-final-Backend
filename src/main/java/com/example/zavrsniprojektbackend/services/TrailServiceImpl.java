@@ -1,10 +1,6 @@
 package com.example.zavrsniprojektbackend.services;
 
-import com.example.zavrsniprojektbackend.dtos.CreateTrailRequest;
-import com.example.zavrsniprojektbackend.dtos.TrailResponseDto;
-import com.example.zavrsniprojektbackend.dtos.WaypointDto;
-import com.example.zavrsniprojektbackend.dtos.BiomePercentagesDto;
-import com.example.zavrsniprojektbackend.dtos.RatingStatsDto;
+import com.example.zavrsniprojektbackend.dtos.*;
 import com.example.zavrsniprojektbackend.models.*;
 import com.example.zavrsniprojektbackend.repos.TrailRepository;
 import com.example.zavrsniprojektbackend.repos.TrailBiomeRepository;
@@ -77,7 +73,19 @@ public class TrailServiceImpl implements TrailService {
             log.error("Error analyzing LULC for trail {}: {}", trail.getId(), e.getMessage(), e);
         }
     }
+    @Transactional
+    public void deleteTrail(Integer trailId, User user) {
+        Trail trail = trailRepo.findById(trailId)
+                .orElseThrow(() -> new RuntimeException("Trail not found with ID: " + trailId));
 
+        // Check if user owns this trail
+        if (!trail.getCreatedBy().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only delete your own trails");
+        }
+
+        trailRepo.delete(trail);
+        log.info("Trail {} deleted by user {}", trailId, user.getId());
+    }
     @Override
     public List<TrailResponseDto> getAllTrails() {
         return trailRepo.findAll().stream()
@@ -123,6 +131,17 @@ public class TrailServiceImpl implements TrailService {
         // Get rating stats
         RatingStatsDto ratingStats = getRatingStats(trail.getId(), currentUserId);
 
+        // Map creator info
+        UserInfoDto createdBy = null;
+        if (trail.getCreatedBy() != null) {
+            createdBy = new UserInfoDto(
+                    trail.getCreatedBy().getId(),
+                    trail.getCreatedBy().getFullName(),
+                    trail.getCreatedBy().getEmail(),
+                    trail.getCreatedBy().getRole().name()
+            );
+        }
+
         return new TrailResponseDto(
                 trail.getId(),
                 trail.getName(),
@@ -137,7 +156,8 @@ public class TrailServiceImpl implements TrailService {
                 trail.getTotalDescent(),
                 wpDtos,
                 biomes,
-                ratingStats
+                ratingStats,
+                createdBy  // NEW: Include creator info
         );
     }
 

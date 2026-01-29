@@ -32,7 +32,14 @@ public class TrailController {
         List<TrailResponseDto> trails = trailService.getAllTrails();
         return ResponseEntity.ok(trails);
     }
-
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTrail(
+            @PathVariable Integer id,
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        trailService.deleteTrail(id, user);
+        return ResponseEntity.noContent().build();
+    }
     @GetMapping("/{id}")
     public ResponseEntity<TrailResponseDto> getTrailById(@PathVariable Integer id) {
         TrailResponseDto trail = trailService.getTrailById(id);

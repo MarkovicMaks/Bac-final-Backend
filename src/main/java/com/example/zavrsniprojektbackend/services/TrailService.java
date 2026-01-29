@@ -11,4 +11,5 @@ public interface TrailService {
     List<TrailResponseDto> getAllTrails();
     TrailResponseDto getTrailById(Integer id);
     List<TrailResponseDto> getTrailsByUser(Integer userId);
+    void deleteTrail(Integer trailId, User user);
 }

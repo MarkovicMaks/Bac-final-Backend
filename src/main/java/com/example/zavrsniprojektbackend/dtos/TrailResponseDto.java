@@ -18,7 +18,8 @@ public record TrailResponseDto(
         BigDecimal totalDescent,
         List<WaypointDto> waypoints,
         BiomePercentagesDto biomes,
-        RatingStatsDto ratingStats
+        RatingStatsDto ratingStats,
+        UserInfoDto createdBy  // NEW: Added creator info
 ) {
     // Keep existing constructors for compatibility
     public TrailResponseDto(
@@ -34,8 +35,27 @@ public record TrailResponseDto(
             BigDecimal totalAscent,
             BigDecimal totalDescent,
             List<WaypointDto> waypoints,
+            BiomePercentagesDto biomes,
+            RatingStatsDto ratingStats) {
+        this(id, name, description, lengthKm, heightKm, difficulty, createdAt,
+                minElevation, maxElevation, totalAscent, totalDescent, waypoints, biomes, ratingStats, null);
+    }
+
+    public TrailResponseDto(
+            Integer id,
+            String name,
+            String description,
+            BigDecimal lengthKm,
+            BigDecimal heightKm,
+            String difficulty,
+            Instant createdAt,
+            BigDecimal minElevation,
+            BigDecimal maxElevation,
+            BigDecimal totalAscent,
+            BigDecimal totalDescent,
+            List<WaypointDto> waypoints,
             BiomePercentagesDto biomes) {
         this(id, name, description, lengthKm, heightKm, difficulty, createdAt,
-                minElevation, maxElevation, totalAscent, totalDescent, waypoints, biomes, null);
+                minElevation, maxElevation, totalAscent, totalDescent, waypoints, biomes, null, null);
     }
 }
