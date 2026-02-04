@@ -32,8 +32,7 @@ public class LulcAnalysisService {
     private final TrailBiomeRepository trailBiomeRepository;
 
     @Autowired
-    @Qualifier("postGisDataSource")
-    private DataSource postGisDataSource;
+    private DataSource dataSource;
 
     @Value("${postgis.buffer.distance:15}")
     private double bufferDistance;
@@ -127,7 +126,7 @@ public class LulcAnalysisService {
             ORDER BY lulc_class
             """.formatted(rasterTable);  // Use configured table name
 
-        try (Connection conn = postGisDataSource.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setDouble(1, lon);

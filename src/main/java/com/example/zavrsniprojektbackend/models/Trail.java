@@ -21,7 +21,7 @@ public class Trail {
     @Column(nullable = false)
     private String name;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "length_km", nullable = false, precision = 10, scale = 2)
